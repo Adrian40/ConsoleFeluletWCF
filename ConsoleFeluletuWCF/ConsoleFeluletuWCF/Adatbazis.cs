@@ -225,120 +225,119 @@ namespace ConsoleFeluletuWCF
             }
             return letezik;
         }
+    }
+    /// <summary>
+    /// Az adatbázis motorhoz közvetlenül nem kapcsolódó, de azt használó ellenőrzésre való metódusok gyűjtőhelye!
+    /// </summary>
+    class Ellenorzes
+    {
+        Adatbazis adatbazis = Adatbazis.AdatBazis;
+        SqlConnection kapcsolat = Adatbazis.kapcsolat;
         /// <summary>
-        /// Az adatbázis motorhoz közvetlenül nem kapcsolódó, de azt használó ellenőrzésre való metódusok gyűjtőhelye!
+        /// A beírt munkaidőről megmondja, hogy szerepel-e már az adatbázisban!
         /// </summary>
-        class Ellenorzes
+        /// <param name="n">A munkaidő a neve!</param>
+        /// <returns>BOOL érték; true: szerepel, false: nem szerepel!</returns>
+        public bool MunkaidoEllenorzo(string n)
         {
-            Adatbazis adatbazis = Adatbazis.adatBazis;
-            SqlConnection kapcsolat = Adatbazis.kapcsolat;
-            /// <summary>
-            /// A beírt munkaidőről megmondja, hogy szerepel-e már az adatbázisban!
-            /// </summary>
-            /// <param name="n">A munkaidő a neve!</param>
-            /// <returns>BOOL érték; true: szerepel, false: nem szerepel!</returns>
-            public bool MunkaidoEllenorzo(string n)
-            {
-                SqlCommand parancs = new SqlCommand();
-                parancs.Connection = kapcsolat;
-                parancs.CommandType = CommandType.Text;
-                parancs.CommandText = "SELECT * FROM Munkaidok WHERE Munkaidok.munkaidonev='" + n + "'";
-                return adatbazis.SzerepelazAdatBazisban(kapcsolat, parancs);
-            }
-            /// <summary>
-            /// A beírt usernévről megmondja, hogy szerepel-e már az adatbázisban!
-            /// </summary>
-            /// <param name="n">A user-nek a neve!</param>
-            /// <returns>BOOL érték; true: szerepel, false: nem szerepel!</returns>
-            public bool AlkalmazottEllenorzo(string n)
-            {
-                SqlCommand parancs = new SqlCommand();
-                parancs.Connection = kapcsolat;
-                parancs.CommandType = CommandType.Text;
-                parancs.CommandText = "SELECT * FROM Alkalmazottak WHERE Alkalmazottak.nev='" + n + "'";
-                return adatbazis.SzerepelazAdatBazisban(kapcsolat, parancs);
+            SqlCommand parancs = new SqlCommand();
+            parancs.Connection = kapcsolat;
+            parancs.CommandType = CommandType.Text;
+            parancs.CommandText = "SELECT * FROM Munkaidok WHERE Munkaidok.munkaidonev='" + n + "'";
+            return adatbazis.SzerepelazAdatBazisban(kapcsolat, parancs);
+        }
+        /// <summary>
+        /// A beírt usernévről megmondja, hogy szerepel-e már az adatbázisban!
+        /// </summary>
+        /// <param name="n">A user-nek a neve!</param>
+        /// <returns>BOOL érték; true: szerepel, false: nem szerepel!</returns>
+        public bool AlkalmazottEllenorzo(string n)
+        {
+            SqlCommand parancs = new SqlCommand();
+            parancs.Connection = kapcsolat;
+            parancs.CommandType = CommandType.Text;
+            parancs.CommandText = "SELECT * FROM Alkalmazottak WHERE Alkalmazottak.nev='" + n + "'";
+            return adatbazis.SzerepelazAdatBazisban(kapcsolat, parancs);
 
-            }
-            /// <summary>
-            /// Megmondja, hogy egy létező user megfelelő jelszót írt-e be!
-            /// </summary>
-            /// <param name="n">A NevEllenorzo() által visszaadott usernév!</param>
-            /// <param name="j">A kliens jelszó mezőjébe írt karakterlánc!</param>
-            /// <returns>BOOL érték; true: jó a jelszó, false: hibás a jelszó!</returns>
-            public bool JelszoEllenorzo(string n, string j)
+        }
+        /// <summary>
+        /// Megmondja, hogy egy létező user megfelelő jelszót írt-e be!
+        /// </summary>
+        /// <param name="n">A NevEllenorzo() által visszaadott usernév!</param>
+        /// <param name="j">A kliens jelszó mezőjébe írt karakterlánc!</param>
+        /// <returns>BOOL érték; true: jó a jelszó, false: hibás a jelszó!</returns>
+        public bool JelszoEllenorzo(string n, string j)
+        {
+            DataTable adattabla = new DataTable();
+            SqlCommand parancs = new SqlCommand();
+            parancs.Connection = kapcsolat;
+            parancs.CommandType = CommandType.Text;
+            parancs.CommandText = "SELECT nev, jelszo FROM Alkalmazottak WHERE (nev='" + n + "') AND (jelszo='" + j + "')";
+            return adatbazis.SzerepelazAdatBazisban(kapcsolat, parancs);
+        }
+        /// <summary>
+        /// A user által töltött munkaidő nevét mondja meg!
+        /// </summary>
+        /// <returns>STRING: A user munkaidejének a neve!</returns>
+        public string MunkaidoNevetAd()
+        {
+            string nev = Alkalmazottak.AlkalmazottNeve;
+
+            SqlCommand parancs = new SqlCommand();
+            parancs.CommandType = CommandType.Text;
+            parancs.CommandText = "SELECT Munkaido FROM Munkaidok INNER JOIN AlkalmazottakMunkaido ON Munkaidok.id=MunkidokAlkalmazottak.MunkaidokID INNER JOIN Alkalmazottak ON AlkalmazottakMunkaidok.AlkalmazottakID=AlkalmazottakID WHERE AlkalmazottakNev = '" + nev + "'";
+
+            DataTable dt = adatbazis.Select(parancs);
+            string munkaidonev = dt.Rows[0]["munkaidonev"].ToString();
+            return munkaidonev;
+        }
+        /// <summary>
+        /// Megmondja, hogy az alkalmazottnak van-e már munkaideje!
+        /// </summary>
+        /// <returns>BOOL érték; true: van munkaideje, false: nincs munkaideje!</returns>
+        public bool VanMunkaideje()
+        {
+            string alkalmazottnev = Alkalmazottak.AlkalmazottNeve;
+            SqlCommand kerdes = new SqlCommand();
+            kerdes.CommandType = CommandType.Text;
+            kerdes.CommandText = "SELECT * FROM Alkalmazottak WHERE Alkalmazottak.nev = '" + alkalmazottnev + "'";
+
+            int eredmeny = adatbazis.SelectID(kerdes);
+
+            SqlCommand parancs = new SqlCommand();
+            parancs.CommandType = CommandType.Text;
+            parancs.CommandText = "SELECT * FROM AlkalmazottakMunkaidok WHERE AlkalmazottakID= " + eredmeny + "";
+
+            if (adatbazis.SzerepelazAdatBazisban(kapcsolat, parancs) != true)
             {
-                DataTable adattabla = new DataTable();
-                SqlCommand parancs = new SqlCommand();
-                parancs.Connection = kapcsolat;
-                parancs.CommandType = CommandType.Text;
-                parancs.CommandText = "SELECT nev, jelszo FROM Alkalmazottak WHERE (nev='" + n + "') AND (jelszo='" + j + "')";
-                return adatbazis.SzerepelazAdatBazisban(kapcsolat, parancs);
+                return false;
             }
-            /// <summary>
-            /// A user által töltött munkaidő nevét mondja meg!
-            /// </summary>
-            /// <returns>STRING: A user munkaidejének a neve!</returns>
-            public string MunkaidoNevetAd()
+            else
             {
-                string nev = Alkalmazottak.AlkalmazottNeve;
-
-                SqlCommand parancs = new SqlCommand();
-                parancs.CommandType = CommandType.Text;
-                parancs.CommandText = "SELECT Munkaido FROM Munkaidok INNER JOIN AlkalmazottakMunkaido ON Munkaidok.id=MunkidokAlkalmazottak.MunkaidokID INNER JOIN Alkalmazottak ON AlkalmazottakMunkaidok.AlkalmazottakID=AlkalmazottakID WHERE AlkalmazottakNev = '" + nev + "'";
-
-                DataTable dt = adatbazis.Select(parancs);
-                string munkaidonev = dt.Rows[0]["munkaidonev"].ToString();
-                return munkaidonev;
+                return true;
             }
-            /// <summary>
-            /// Megmondja, hogy az alkalmazottnak van-e már munkaideje!
-            /// </summary>
-            /// <returns>BOOL érték; true: van munkaideje, false: nincs munkaideje!</returns>
-            public bool VanMunkaideje()
-            {
-                string alkalmazottnev = Alkalmazottak.AlkalmazottNeve;
-                SqlCommand kerdes = new SqlCommand();
-                kerdes.CommandType = CommandType.Text;
-                kerdes.CommandText = "SELECT * FROM Alkalmazottak WHERE Alkalmazottak.nev = '" + alkalmazottnev + "'";
-
-                int eredmeny = adatbazis.SelectID(kerdes);
-
-                SqlCommand parancs = new SqlCommand();
-                parancs.CommandType = CommandType.Text;
-                parancs.CommandText = "SELECT * FROM AlkalmazottakMunkaidok WHERE AlkalmazottakID= " + eredmeny + "";
-
-                if (adatbazis.SzerepelazAdatBazisban(kapcsolat, parancs) != true)
-                {
-                    return false;
-                }
-                else
-                {
-                    return true;
-                }
-            }
-            /// <summary>
-            /// Van munkaidő az adatbázisban?
-            /// </summary>
-            /// <returns>BOOL érték; true: van munkaidő, false: nincs munkaidő!</returns>
-            public bool VanMunkaido()
-            {
-                SqlCommand parancs = new SqlCommand();
-                parancs.CommandType = CommandType.Text;
-                parancs.CommandText = "SELECT * FROM Munkaidok";
-                return adatbazis.SzerepelazAdatBazisban(kapcsolat, parancs);
-            }
-
-            /// <summary>
-            /// Ahhoz, hogy a táblát a WCF át tudja adni a kliensnek, segítenünk kell a Szerializálásban! Gyakorlatilag rákényszerítjük, hogy elvégezze, mert magától nem teszi meg! Ha nem csináljuk, kivételt dob!
-            /// </summary>
-            /// <param name="dt">A szerializálni kívánt DataTable példány, és a TableName metódus szövege (egyedi táblanév)</param>
-            /// <returns>Szerializált DataTable példány!</returns>
-            public DataTable Szerializalo(DataTable dt, string adattablanev)
-            {
-                dt.TableName = adattablanev;
-                new DataContractSerializer(typeof(DataTable)).WriteObject(new System.IO.MemoryStream(), dt);
-                return dt;
-            }
+        }
+        /// <summary>
+        /// Van munkaidő az adatbázisban?
+        /// </summary>
+        /// <returns>BOOL érték; true: van munkaidő, false: nincs munkaidő!</returns>
+        public bool VanMunkaido()
+        {
+            SqlCommand parancs = new SqlCommand();
+            parancs.CommandType = CommandType.Text;
+            parancs.CommandText = "SELECT * FROM Munkaidok";
+            return adatbazis.SzerepelazAdatBazisban(kapcsolat, parancs);
+        }
+        /// <summary>
+        /// Ahhoz, hogy a táblát a WCF át tudja adni a kliensnek, segítenünk kell a Szerializálásban! Gyakorlatilag rákényszerítjük, hogy elvégezze, mert magától nem teszi meg! Ha nem csináljuk, kivételt dob!
+        /// </summary>
+        /// <param name="dt">A szerializálni kívánt DataTable példány, és a TableName metódus szövege (egyedi táblanév)</param>
+        /// <returns>Szerializált DataTable példány!</returns>
+        public DataTable Szerializalo(DataTable dt, string adattablanev)
+        {
+            dt.TableName = adattablanev;
+            new DataContractSerializer(typeof(DataTable)).WriteObject(new System.IO.MemoryStream(), dt);
+            return dt;
         }
     }
 }
